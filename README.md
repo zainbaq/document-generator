@@ -107,6 +107,7 @@ document-generation-tool/
 
 Sample Template File (sample_template.txt)
 
+```bash
 Title: [Document Title]
 Introduction:
   - Overview: [Insert brief overview here]
@@ -115,10 +116,13 @@ Body:
   - Details: [Insert detailed information here]
 Conclusion:
   - Summary: [Insert summary here]
+```
 
 ## Sample Document File (sample_document.txt)
 
+```bash
 The document discusses the benefits of renewable energy. It begins by outlining various renewable energy sources such as solar, wind, and hydro power, emphasizing their potential to provide sustainable energy solutions. The purpose of the document is to inform readers about both the environmental and economic benefits of adopting renewable energy. In the detailed section, the document explains how renewable energy can lead to reduced greenhouse gas emissions, improved air quality, and long-term cost savings. Finally, the conclusion summarizes that transitioning to renewable energy is essential for ensuring a sustainable future.
+```
 
 ## Troubleshooting
 
