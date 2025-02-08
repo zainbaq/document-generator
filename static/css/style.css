@@ -50,3 +50,49 @@ button {
     padding: 15px;
     border-radius: 5px;
 }
+
+/* Drag & Drop and Progress Bar Styles */
+.drop-zone {
+    border: 2px dashed #cccccc;
+    border-radius: 5px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+
+.drop-zone.hover {
+    border-color: #333333;
+}
+
+.progress-bar {
+    width: 100%;
+    background-color: #f3f3f3;
+    border-radius: 5px;
+    margin-top: 10px;
+    display: none;
+}
+
+.progress-bar-fill {
+    height: 10px;
+    width: 0;
+    background-color: #4caf50;
+    border-radius: 5px;
+}
+
+/* Spinner Styles - Smaller and Center Aligned */
+.spinner {
+    border: 6px solid #f3f3f3; /* Light grey */
+    border-top: 6px solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    display: none; /* Hidden by default */
+    margin: 20px auto; /* Center align within its container */
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
