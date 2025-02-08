@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <title>Document Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        function toggleContextUpload() {
+            var checkBox = document.getElementById("toggleContext");
+            var contextSection = document.getElementById("contextSection");
+            if (checkBox.checked) {
+                contextSection.style.display = "block";
+            } else {
+                contextSection.style.display = "none";
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -30,6 +41,18 @@
                 <input type="file" id="info_file" name="info_file" class="drop-zone__input" accept=".txt,.md,.docx,.pdf" required>
                 <div class="progress-bar" id="info-progress">
                     <div class="progress-bar-fill" id="info-progress-fill"></div>
+                </div>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="toggleContext" onclick="toggleContextUpload()">
+                    Include Additional Context Documents
+                </label>
+            </div>
+            <div id="contextSection" style="display:none;">
+                <div class="drop-zone" id="context-drop-zone">
+                    <span class="drop-zone__prompt">Drag & drop your additional context documents here or click to upload (multiple files allowed)</span>
+                    <input type="file" id="context_files" name="context_files" class="drop-zone__input" accept=".txt,.md,.docx,.pdf" multiple>
                 </div>
             </div>
             <div>

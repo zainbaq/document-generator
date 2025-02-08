@@ -6,11 +6,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 
-# Import LangChain modules for text splitting and summarization.
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.chains.summarize import load_summarize_chain
-from langchain_community.llms import OpenAI as LCOpenAI
-
 # =============================================================================
 # Load Environment Variables
 # =============================================================================
@@ -20,13 +15,13 @@ load_dotenv()
 # Initialize Flask App
 # =============================================================================
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Replace with a secure key in production
+app.secret_key = 'your_secret_key'  # Needed for flashing error messages
 
 # =============================================================================
-# Initialize OpenAI Client (Original Client)
+# Initialize OpenAI Client
 # =============================================================================
 client = OpenAI(
-    api_key=os.environ.get("OPENAI_API_KEY"),
+    api_key=os.environ.get("OPENAI_API_KEY"),  # This is the default and can be omitted
 )
 if not client.api_key:
     raise ValueError("The OpenAI API key is not set. Please set it in the .env file.")
@@ -41,19 +36,26 @@ generate_document_prompt = prompts.get('generate_document_from_template_prompt')
 if not generate_document_prompt:
     raise ValueError("The generate_document_from_template_prompt is not defined in prompts.json.")
 
+summarize_document_prompt = prompts.get('summarize_document_prompt')
+if not generate_document_prompt:
+    raise ValueError("The summaize_document_from_template_prompt is not defined in prompts.json.")
+
 # =============================================================================
 # Utility Function: Read Uploaded File
 # =============================================================================
 def read_uploaded_file(uploaded_file):
     """
-    Read the uploaded file and extract text based on its file type.
+    Read the uploaded file and extract text depending on its file type.
     Supports .txt, .md, .docx, and .pdf files.
     """
     filename = secure_filename(uploaded_file.filename)
     ext = os.path.splitext(filename)[1].lower()
     
+    # For text-based files
     if ext in ['.txt', '.md']:
         return uploaded_file.read().decode('utf-8')
+    
+    # For DOCX files
     elif ext == '.docx':
         from docx import Document
         doc = Document(uploaded_file)
@@ -61,6 +63,8 @@ def read_uploaded_file(uploaded_file):
         for para in doc.paragraphs:
             full_text.append(para.text)
         return "\n".join(full_text)
+    
+    # For PDF files
     elif ext == '.pdf':
         import PyPDF2
         uploaded_file.seek(0)
@@ -71,13 +75,92 @@ def read_uploaded_file(uploaded_file):
             if text:
                 pages_text.append(text)
         return "\n".join(pages_text)
+    
+    # Fallback to reading as text
     else:
         return uploaded_file.read().decode('utf-8')
 
 # =============================================================================
-# Function: Summarize Document (Updated with LangChain and Document Conversion)
+# Function: Process Additional Context Files
 # =============================================================================
-def summarize_document(document_text, template_text):
+def process_context_files(context_files, query_text):
+    """
+    Process additional context files uploaded by the user.
+    Reads and extracts text from the files, splits the text into chunks,
+    converts chunks into Document objects, indexes them using a vector store,
+    and retrieves relevant chunks via similarity search using the query_text.
+
+    Args:
+        context_files (list): List of file objects from the request.
+        query_text (str): The text to use as a query for similarity search (e.g., template text).
+
+    Returns:
+        list: A list of Document objects that are most relevant or an empty list if no context is provided.
+    """
+    # If no context files are provided, return an empty list.
+    if not context_files or context_files[0].filename == "":
+        return []
+    
+    # Read and extract text from each context file.
+    context_texts = []
+    for file in context_files:
+        context_texts.append(read_uploaded_file(file))
+    
+    # Split the text into chunks and convert each chunk into a Document.
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain.docstore.document import Document
+    all_context_docs = []
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    for doc_text in context_texts:
+        chunks = text_splitter.split_text(doc_text)
+        for chunk in chunks:
+            all_context_docs.append(Document(page_content=chunk))
+    
+    # Build a vector store from the Document objects and perform similarity search.
+    from langchain.embeddings import OpenAIEmbeddings
+    from langchain.vectorstores import FAISS
+    embeddings = OpenAIEmbeddings()
+    vector_store = FAISS.from_documents(all_context_docs, embeddings)
+    retrieved_docs = vector_store.similarity_search(query_text, k=5)
+    return retrieved_docs
+
+# =============================================================================
+# Function: Summarize Long Document
+# =============================================================================
+def summarize_long_document(document_text):
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+    from langchain.docstore.document import Document
+    
+    # Split the long document into smaller chunks.
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    texts = text_splitter.split_text(document_text)
+    
+    # Convert each chunk into a Document object.
+    docs = [Document(page_content=t) for t in texts]
+    
+    # Use the chat-based LLM wrapper for LangChain.
+    from langchain.chat_models import ChatOpenAI
+    llm = ChatOpenAI(temperature=0.5, model="gpt-4o")
+    
+    # Load a summarization chain (map_reduce is a good choice for long documents).
+    from langchain.chains.summarize import load_summarize_chain
+    chain = load_summarize_chain(llm, chain_type="map_reduce")
+    
+    # Process each document chunk individually.
+    partial_summaries = []
+    for doc in docs:
+        summary = chain.run([doc])
+        partial_summaries.append(summary)
+    
+    # Combine the partial summaries into a single summary.
+    long_summary = "\n".join(partial_summaries)
+    return long_summary
+
+
+# =============================================================================
+# Function: Summarize Document (with LangChain)
+# =============================================================================
+def summarize_document(document_text, template_text, LONG_DOC_THRESHOLD=3000):
     """
     Summarize the given document text with reference to the template.
     If the document is long, use LangChain's text splitter and summarization chain to
@@ -90,46 +173,12 @@ def summarize_document(document_text, template_text):
     Returns:
         str: A summary of the document.
     """
-    # Define a threshold (in characters) above which we consider the document "long"
-    LONG_DOC_THRESHOLD = 3000
     
     if len(document_text) > LONG_DOC_THRESHOLD:
-        # Import necessary modules for text splitting and document conversion.
-        from langchain.text_splitter import RecursiveCharacterTextSplitter
-        from langchain.docstore.document import Document
-        
-        # Split the long document into smaller chunks.
-        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        texts = text_splitter.split_text(document_text)
-        
-        # Convert each text chunk into a Document object.
-        docs = [Document(page_content=t) for t in texts]
-        
-        # Use the chat-based LLM wrapper for LangChain.
-        from langchain.chat_models import ChatOpenAI
-        llm = ChatOpenAI(temperature=0.5, model="gpt-4o")
-        
-        # Load a summarization chain (map_reduce is a good choice for long documents).
-        from langchain.chains.summarize import load_summarize_chain
-        chain = load_summarize_chain(llm, chain_type="map_reduce")
-        
-        # Process each document chunk individually to avoid passing a list of prompts.
-        partial_summaries = []
-        for doc in docs:
-            # Each call receives a single Document wrapped in a list.
-            summary = chain.run([doc])
-            partial_summaries.append(summary)
-        
-        # Combine the partial summaries into a single summary.
-        long_summary = "\n".join(partial_summaries)
-        document_text = long_summary
+        document_text = summarize_long_document(document_text)
 
     # Proceed with the original summarization method using a custom prompt.
-    system_prompt = (
-        "You are an expert summarizer. Given the following template and document, "
-        "generate a concise summary that includes only the information relevant to filling in the template. "
-        "Provide the summary as bullet points."
-    )
+    system_prompt = summarize_document_prompt
     user_prompt = (
         f"Template:\n{template_text}\n\n"
         f"Document:\n{document_text}\n\n"
@@ -150,26 +199,36 @@ def summarize_document(document_text, template_text):
         return summary
     except Exception as e:
         print(f"Error summarizing document: {e}")
-        # In case of an error, fallback to using the (possibly long) document text.
         return document_text
 
-
 # =============================================================================
-# Function: Generate Document (Unchanged)
+# Function: Generate Document (with Optional Context)
 # =============================================================================
-def generate_document(template_text, info_text):
+def generate_document(template_text, info_text, context_chunks=None):
     """
-    Generate a document by combining the template with a summary of the original information text.
+    Generate a document by combining the template and a summary of the original information text.
+    If additional context chunks are provided, include them in the prompt.
     
-    Uses the new ChatCompletion interface with system and user messages.
+    Args:
+        template_text (str): The document template.
+        info_text (str): The original document text.
+        context_chunks (list, optional): A list of Document objects retrieved from additional context files.
+    
+    Returns:
+        str: The generated document.
     """
     summarized_info = summarize_document(info_text, template_text)
     
+    additional_context_text = ""
+    if context_chunks:
+        additional_context_text = "\n".join([doc.page_content for doc in context_chunks])
+    
     system_prompt = generate_document_prompt  # Detailed instructions from prompts.json.
-    user_prompt = (
-        f"Template:\n{template_text}\n\n"
-        f"Original Document Summary:\n{summarized_info}"
-    )
+    user_prompt = f"Template:\n{template_text}\n\n"
+    if additional_context_text:
+        user_prompt += f"Additional Context:\n{additional_context_text}\n\n"
+    user_prompt += f"Original Document Summary:\n{summarized_info}"
+    
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
@@ -194,9 +253,6 @@ def generate_document(template_text, info_text):
 def index():
     """
     Render the homepage with the file upload form.
-    
-    Returns:
-        Rendered HTML of the index page.
     """
     return render_template('index.html')
 
@@ -206,15 +262,14 @@ def index():
 @app.route('/generate', methods=['POST'])
 def generate():
     """
-    Handle file uploads, process and parse the files (supporting .txt, .md, .docx, .pdf),
-    summarize the original document with reference to the template, generate the final document,
-    and render the result.
-    
-    Returns:
-        Rendered HTML of the result page with the generated document.
+    Handle file uploads, including optional additional context documents.
+    Process and parse the files (supporting .txt, .md, .docx, .pdf),
+    index and retrieve relevant chunks from context documents (if provided),
+    summarize the original document with reference to the template,
+    generate the final document, and render the result.
     """
     if 'template_file' not in request.files or 'info_file' not in request.files:
-        flash("Both files are required.")
+        flash("Both template and information files are required.")
         return redirect(request.url)
 
     template_file = request.files['template_file']
@@ -231,12 +286,16 @@ def generate():
         flash(f"Error reading files: {str(e)}")
         return redirect(url_for('index'))
 
-    final_document = generate_document(template_text, info_text)
+    # Process additional context documents if provided.
+    context_files = request.files.getlist('context_files')
+    retrieved_docs = process_context_files(context_files, template_text)
+    
+    # Generate the final document using the provided files and any retrieved context.
+    final_document = generate_document(template_text, info_text, context_chunks=retrieved_docs)
     return render_template('result.html', document=final_document)
 
 # =============================================================================
 # Main Entry Point
 # =============================================================================
 if __name__ == '__main__':
-    # In production, replace Flask's built-in server with a production WSGI server.
     app.run(debug=True)
