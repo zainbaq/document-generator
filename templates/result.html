@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Generated Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Your Generated Document</h1>
+        <pre class="document-output">{{ document }}</pre>
+        <a href="{{ url_for('index') }}">Generate another document</a>
+    </div>
+</body>
+</html>

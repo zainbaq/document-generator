@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Document Generation Tool</h1>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <ul class="flashes">
+              {% for message in messages %}
+                <li>{{ message }}</li>
+              {% endfor %}
+            </ul>
+          {% endif %}
+        {% endwith %}
+        <form action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data">
+            <div>
+                <label for="template_file">Template File:</label>
+                <input type="file" id="template_file" name="template_file" accept=".txt,.md,.docx,.pdf" required>
+            </div>
+            <div>
+                <label for="info_file">Information File:</label>
+                <input type="file" id="info_file" name="info_file" accept=".txt,.md,.docx,.pdf" required>
+            </div>
+            <div>
+                <button type="submit">Generate Document</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
