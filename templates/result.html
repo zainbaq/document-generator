@@ -8,8 +8,21 @@
 <body>
     <div class="container">
         <h1>Your Generated Document</h1>
-        <pre class="document-output">{{ document }}</pre>
-        <a href="{{ url_for('index') }}">Generate another document</a>
+        <div class="document-output">
+            {{ document }}
+        </div>
+        <div class="download-buttons">
+            <a href="{{ url_for('download', filetype='docx') }}">
+                <button type="button">Download as DOCX</button>
+            </a>
+            <!-- This button is not working and needs to be resolved to enable PDF downloads -->
+            <!-- <a href="{{ url_for('download', filetype='pdf') }}">
+                <button type="button">Download as PDF</button>
+            </a> -->
+            <a href="{{ url_for('index') }}">
+                <button type="button">Generate another document</button>
+            </a>
+        </div>
     </div>
 </body>
 </html>

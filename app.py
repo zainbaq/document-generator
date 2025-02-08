@@ -1,7 +1,7 @@
 import json
 import os
 import io
-from flask import Flask, request, render_template, redirect, url_for, flash
+from flask import Flask, request, render_template, redirect, url_for, flash, session, send_file
 from openai import OpenAI
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
@@ -247,6 +247,50 @@ def generate_document(template_text, info_text, context_chunks=None):
     return generated_document
 
 # =============================================================================
+# Function: Generate DOCX File from Text
+# =============================================================================
+def generate_docx(text):
+    """
+    Generate a DOCX file from the given text.
+    
+    Args:
+        text (str): The text to include in the document.
+    
+    Returns:
+        BytesIO: An in-memory DOCX file.
+    """
+    from docx import Document as DocxDocument
+    doc = DocxDocument()
+    # Add a title and paragraph; customize formatting as needed.
+    doc.add_heading("Generated Document", level=1)
+    doc.add_paragraph(text)
+    f = io.BytesIO()
+    doc.save(f)
+    f.seek(0)
+    return f
+
+# =============================================================================
+# Function: Generate PDF File from Text
+# =============================================================================
+def generate_pdf(text):
+    """
+    Generate a PDF file from the given text.
+    
+    Args:
+        text (str): The text to include in the document.
+    
+    Returns:
+        BytesIO: An in-memory PDF file.
+    """
+    from weasyprint import HTML
+    # Wrap the text in basic HTML formatting. Adjust as needed.
+    html_str = f"<html><body><h1>Generated Document</h1><pre>{text}</pre></body></html>"
+    pdf = HTML(string=html_str).write_pdf()
+    f = io.BytesIO(pdf)
+    f.seek(0)
+    return f
+
+# =============================================================================
 # Route: Index Page
 # =============================================================================
 @app.route('/')
@@ -292,7 +336,38 @@ def generate():
     
     # Generate the final document using the provided files and any retrieved context.
     final_document = generate_document(template_text, info_text, context_chunks=retrieved_docs)
+
+    # Store the generated document in session for download.
+    session['final_document'] = final_document
     return render_template('result.html', document=final_document)
+
+# =============================================================================
+# Route: Download Generated Document
+# =============================================================================
+@app.route('/download')
+def download():
+    """
+    Download the generated document as either a DOCX file or a PDF file based on user choice.
+    The file type is determined by a query parameter 'filetype'.
+    
+    Returns:
+        A downloadable file (DOCX or PDF).
+    """
+    filetype = request.args.get('filetype', 'docx').lower()
+    final_document = session.get('final_document')
+    if not final_document:
+        flash("No document available for download.")
+        return redirect(url_for('index'))
+    
+    if filetype == 'docx':
+        file_data = generate_docx(final_document)
+        return send_file(file_data, as_attachment=True, download_name="generated_document.docx", mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    elif filetype == 'pdf':
+        file_data = generate_pdf(final_document)
+        return send_file(file_data, as_attachment=True, download_name="generated_document.pdf", mimetype="application/pdf")
+    else:
+        flash("Invalid file type requested.")
+        return redirect(url_for('index'))
 
 # =============================================================================
 # Main Entry Point
