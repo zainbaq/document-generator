@@ -77,14 +77,14 @@ Access the Web Interface:
 
 Open your browser and navigate to http://127.0.0.1:5000. You will see a form where you can upload your template and document files.
 
-Upload Files & Generate Document:
-    Template File: Use a file that defines the structure of your final document.
-    Document File: Use a file containing the content that needs to be summarized and inserted into the template.
-    After uploading, click the "Generate Document" button. The tool will:
-        Read and parse the files.
-        Summarize the document content with reference to the template.
-        Generate a final document by filling in the template.
-    The generated document will be displayed on the results page.
+    Upload Files & Generate Document:
+        Template File: Use a file that defines the structure of your final document.
+        Document File: Use a file containing the content that needs to be summarized and inserted into the template.
+        After uploading, click the "Generate Document" button. The tool will:
+            Read and parse the files.
+            Summarize the document content with reference to the template.
+            Generate a final document by filling in the template.
+        The generated document will be displayed on the results page.
 
 ## Project Structure
 
@@ -126,15 +126,15 @@ The document discusses the benefits of renewable energy. It begins by outlining 
 
 ## Troubleshooting
 
-    OpenAI API Issues:
-        Ensure your .env file is correctly set up with your valid OpenAI API key.
-        Update the OpenAI Python package to the latest version using pip install --upgrade openai.
+OpenAI API Issues:
+    Ensure your .env file is correctly set up with your valid OpenAI API key.
+    Update the OpenAI Python package to the latest version using pip install --upgrade openai.
 
-    File Format Errors:
-        Verify that your uploaded files are in one of the supported formats: .txt, .md, .docx, or .pdf.
+File Format Errors:
+    Verify that your uploaded files are in one of the supported formats: .txt, .md, .docx, or .pdf.
 
-    ChatCompletion Errors:
-        If you encounter errors related to the openai.ChatCompletion.create method, check that your messages are structured correctly as a flat list of dictionaries (system and user messages).
+ChatCompletion Errors:
+    If you encounter errors related to the openai.ChatCompletion.create method, check that your messages are structured correctly as a flat list of dictionaries (system and user messages).
 
 ## License
 
@@ -142,8 +142,8 @@ This project is licensed under the MIT License.
 
 ## Acknowledgments
 
-    Thanks to OpenAI for their powerful language models.
-    Thanks to the developers and maintainers of Flask, python-docx, PyPDF2, and python-dotenv.
-    Special thanks to the community for inspiring this project.
+Thanks to OpenAI for their powerful language models.
+Thanks to the developers and maintainers of Flask, python-docx, PyPDF2, and python-dotenv.
+Special thanks to the community for inspiring this project.
 
 
