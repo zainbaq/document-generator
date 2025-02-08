@@ -65,26 +65,26 @@ A Python Flask-based tool that leverages OpenAI's GPT to generate documents. The
 
 ## Usage
 
-    Run the Application:
+Run the Application:
 
-    ```bash
-    python app.py
-    ```
+```bash
+python app.py
+```
 
-    The Flask development server should start, typically accessible at http://127.0.0.1:5000.
+The Flask development server should start, typically accessible at http://127.0.0.1:5000.
 
-    Access the Web Interface:
+Access the Web Interface:
 
-    Open your browser and navigate to http://127.0.0.1:5000. You will see a form where you can upload your template and document files.
+Open your browser and navigate to http://127.0.0.1:5000. You will see a form where you can upload your template and document files.
 
-    Upload Files & Generate Document:
-        Template File: Use a file that defines the structure of your final document.
-        Document File: Use a file containing the content that needs to be summarized and inserted into the template.
-        After uploading, click the "Generate Document" button. The tool will:
-            Read and parse the files.
-            Summarize the document content with reference to the template.
-            Generate a final document by filling in the template.
-        The generated document will be displayed on the results page.
+Upload Files & Generate Document:
+    Template File: Use a file that defines the structure of your final document.
+    Document File: Use a file containing the content that needs to be summarized and inserted into the template.
+    After uploading, click the "Generate Document" button. The tool will:
+        Read and parse the files.
+        Summarize the document content with reference to the template.
+        Generate a final document by filling in the template.
+    The generated document will be displayed on the results page.
 
 ## Project Structure
 
