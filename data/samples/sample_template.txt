@@ -1,8 +1,0 @@
-Title: [Document Title]
-Introduction:
-  - Overview: [Insert brief overview here]
-  - Purpose: [Insert purpose here]
-Body:
-  - Details: [Insert detailed information here]
-Conclusion:
-  - Summary: [Insert summary here]
