@@ -96,3 +96,25 @@ button {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+/* Download Buttons Styles */
+.download-buttons {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.download-buttons a button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 0 10px;
+    border: none;
+    border-radius: 4px;
+    background-color: #3498db;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.download-buttons a button:hover {
+    background-color: #2980b9;
+}
