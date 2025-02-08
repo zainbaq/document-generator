@@ -4,6 +4,17 @@
     <meta charset="UTF-8">
     <title>Document Generator</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        function toggleContextUpload() {
+            var checkBox = document.getElementById("toggleContext");
+            var contextSection = document.getElementById("contextSection");
+            if (checkBox.checked) {
+                contextSection.style.display = "block";
+            } else {
+                contextSection.style.display = "none";
+            }
+        }
+    </script>
 </head>
 <body>
     <div class="container">
@@ -17,19 +28,119 @@
             </ul>
           {% endif %}
         {% endwith %}
-        <form action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data">
-            <div>
-                <label for="template_file">Template File:</label>
-                <input type="file" id="template_file" name="template_file" accept=".txt,.md,.docx,.pdf" required>
+        <form id="upload-form" action="{{ url_for('generate') }}" method="post" enctype="multipart/form-data">
+            <div class="drop-zone" id="template-drop-zone">
+                <span class="drop-zone__prompt">Drag & drop your template file here or click to upload</span>
+                <input type="file" id="template_file" name="template_file" class="drop-zone__input" accept=".txt,.md,.docx,.pdf" required>
+                <div class="progress-bar" id="template-progress">
+                    <div class="progress-bar-fill" id="template-progress-fill"></div>
+                </div>
+            </div>
+            <div class="drop-zone" id="info-drop-zone">
+                <span class="drop-zone__prompt">Drag & drop your information file here or click to upload</span>
+                <input type="file" id="info_file" name="info_file" class="drop-zone__input" accept=".txt,.md,.docx,.pdf" required>
+                <div class="progress-bar" id="info-progress">
+                    <div class="progress-bar-fill" id="info-progress-fill"></div>
+                </div>
             </div>
             <div>
-                <label for="info_file">Information File:</label>
-                <input type="file" id="info_file" name="info_file" accept=".txt,.md,.docx,.pdf" required>
+                <label>
+                    <input type="checkbox" id="toggleContext" onclick="toggleContextUpload()">
+                    Include Additional Context Documents
+                </label>
+            </div>
+            <div id="contextSection" style="display:none;">
+                <div class="drop-zone" id="context-drop-zone">
+                    <span class="drop-zone__prompt">Drag & drop your additional context documents here or click to upload (multiple files allowed)</span>
+                    <input type="file" id="context_files" name="context_files" class="drop-zone__input" accept=".txt,.md,.docx,.pdf" multiple>
+                </div>
             </div>
             <div>
                 <button type="submit">Generate Document</button>
             </div>
         </form>
+        <!-- Circular loading spinner -->
+        <div id="loading-spinner" class="spinner"></div>
     </div>
+    <script>
+        // Handle drag & drop functionality for file inputs
+        document.querySelectorAll('.drop-zone').forEach(dropZoneElement => {
+            const inputElement = dropZoneElement.querySelector('.drop-zone__input');
+
+            dropZoneElement.addEventListener('click', () => {
+                inputElement.click();
+            });
+
+            inputElement.addEventListener('change', () => {
+                if (inputElement.files.length) {
+                    updateDropZoneText(dropZoneElement, inputElement.files[0].name);
+                }
+            });
+
+            dropZoneElement.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZoneElement.classList.add('hover');
+            });
+
+            ['dragleave', 'dragend'].forEach(type => {
+                dropZoneElement.addEventListener(type, (e) => {
+                    dropZoneElement.classList.remove('hover');
+                });
+            });
+
+            dropZoneElement.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if (e.dataTransfer.files.length) {
+                    inputElement.files = e.dataTransfer.files;
+                    updateDropZoneText(dropZoneElement, e.dataTransfer.files[0].name);
+                }
+                dropZoneElement.classList.remove('hover');
+            });
+        });
+
+        function updateDropZoneText(dropZone, fileName) {
+            dropZone.querySelector('.drop-zone__prompt').textContent = fileName;
+        }
+
+        // Handle form submission with AJAX, progress bar update, and spinner display
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Show the circular spinner
+            document.getElementById('loading-spinner').style.display = 'block';
+
+            var form = this;
+            var formData = new FormData(form);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', form.action, true);
+
+            // Update progress bar for file uploads
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    var percentComplete = (e.loaded / e.total) * 100;
+                    // Display and update progress bars for both drop zones
+                    document.getElementById('template-progress').style.display = 'block';
+                    document.getElementById('info-progress').style.display = 'block';
+                    document.getElementById('template-progress-fill').style.width = percentComplete + '%';
+                    document.getElementById('info-progress-fill').style.width = percentComplete + '%';
+                }
+            });
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === XMLHttpRequest.DONE) {
+                    // Hide the spinner once the response is received
+                    document.getElementById('loading-spinner').style.display = 'none';
+                    if (xhr.status === 200) {
+                        // Replace the page content with the response (or handle as needed)
+                        document.body.innerHTML = xhr.responseText;
+                    } else {
+                        alert('Upload failed.');
+                    }
+                }
+            };
+
+            xhr.send(formData);
+        });
+    </script>
 </body>
 </html>
