@@ -5,6 +5,7 @@ from flask import Flask, request, render_template, redirect, url_for, flash, ses
 from openai import OpenAI
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
+import requests
 
 # =============================================================================
 # Load Environment Variables
@@ -39,6 +40,37 @@ if not generate_document_prompt:
 summarize_document_prompt = prompts.get('summarize_document_prompt')
 if not generate_document_prompt:
     raise ValueError("The summaize_document_from_template_prompt is not defined in prompts.json.")
+
+def azure_ai_foundry_endpoint(endpoint, api_key, system_prompt, user_prompt, **kwargs):
+    # Define the API endpoint
+
+    temperature = kwargs.get('temperature', 0)
+    top_p = kwargs.get('top_p', 1)
+    max_tokens = kwargs.get('max_tokens', 4096)
+
+    body = {
+        "messages": [
+        {
+            "role": "system",
+            "content": system_prompt
+        },
+        {
+            "role": "user",
+            "content": user_prompt
+        }
+        ],
+        "temperature": temperature,
+        "top_p": top_p,
+        "max_tokens": max_tokens,
+        "response_format": { "type": "text" }
+    }
+
+    response = requests.post(
+        endpoint,
+        headers={"api-key": api_key},
+        json=body
+    )
+    return response.json()['choices'][0]['message']['content']
 
 # =============================================================================
 # Utility Function: Read Uploaded File
