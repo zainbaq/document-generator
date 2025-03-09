@@ -12,14 +12,13 @@
             {{ document }}
         </div>
         <div class="download-buttons">
-            <a href="{{ url_for('download', filetype='docx') }}">
+            <a href="{{ url_for('main.download', filetype='docx') }}">
                 <button type="button">Download as DOCX</button>
             </a>
-            <!-- This button is not working and needs to be resolved to enable PDF downloads -->
-            <!-- <a href="{{ url_for('download', filetype='pdf') }}">
+            <a href="{{ url_for('main.download', filetype='pdf') }}">
                 <button type="button">Download as PDF</button>
-            </a> -->
-            <a href="{{ url_for('index') }}">
+            </a>
+            <a href="{{ url_for('main.index') }}">
                 <button type="button">Generate another document</button>
             </a>
         </div>
