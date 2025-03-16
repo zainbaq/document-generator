@@ -1,10 +1,10 @@
 Flask==2.2.2
-openai==1.6.0
+openai
 python-dotenv==1.0.0
 python-docx==0.8.11
 PyPDF2==3.0.1
-langchain
-langchain-openai
+langchain==0.1.10
+langchain-openai==0.0.5
 faiss-cpu==1.7.4
 weasyprint==60.1
 Werkzeug==2.3.7
