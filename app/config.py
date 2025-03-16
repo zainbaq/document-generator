@@ -9,7 +9,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'your_secret_key')
     OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
-    MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max upload size
+    MAX_CONTENT_LENGTH = 50 * 1024 * 1024  # Increased to 50MB max upload size
     SESSION_TYPE = 'filesystem'
     SESSION_PERMANENT = False
     PERMANENT_SESSION_LIFETIME = 1800  # 30 minutes
@@ -20,7 +20,7 @@ class DevelopmentConfig(Config):
     DEBUG = True
     TESTING = False
     HOST = '127.0.0.1'
-    PORT = 5000
+    PORT = 5001
 
 
 class TestingConfig(Config):
@@ -39,7 +39,7 @@ class ProductionConfig(Config):
     SECRET_KEY = os.environ.get('SECRET_KEY', os.urandom(24).hex())
     # Production server can bind to 0.0.0.0 for public access if needed
     HOST = os.environ.get('HOST', '0.0.0.0')
-    PORT = int(os.environ.get('PORT', 5000))
+    PORT = int(os.environ.get('PORT', 5001))
 
 
 # Configuration dictionary

@@ -15,8 +15,11 @@ def summarize_long_document(document_text):
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     from langchain.docstore.document import Document
     
-    # Split the long document into smaller chunks
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    # Split the long document into larger chunks
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=2000,  # Increased from 1000
+        chunk_overlap=300  # Increased from 200
+    )
     texts = text_splitter.split_text(document_text)
     
     # Convert each chunk into a Document object
@@ -70,13 +73,13 @@ def summarize_document(document_text, template_text, LONG_DOC_THRESHOLD=3000):
         {"role": "user", "content": user_prompt}
     ]
     
-    # Generate summary using OpenAI
+    # Generate summary using OpenAI - increased max tokens
     try:
         summary = generate_completion(
             messages=messages,
             model="gpt-4o",
             temperature=0.5,
-            max_tokens=500
+            max_tokens=2000  # Increased from 500
         )
         return summary
     except Exception as e:
@@ -111,20 +114,20 @@ def generate_document(template_text, info_text, context_chunks=None):
     user_prompt = f"Template:\n{template_text}\n\n"
     if additional_context_text:
         user_prompt += f"Additional Context:\n{additional_context_text}\n\n"
-    user_prompt += f"Original Document Summary:\n{summarized_info}"
+    user_prompt += f"Original Document Summary:\n{summarized_info}\n\nPlease generate a comprehensive document that provides detailed and thorough content for each section of the template. Aim to be comprehensive rather than brief."
     
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt}
     ]
     
-    # Generate document using OpenAI
+    # Generate document using OpenAI - with increased max tokens
     try:
         generated_document = generate_completion(
             messages=messages,
             model="gpt-4o",
-            temperature=0.5,
-            max_tokens=4096
+            temperature=0.7,  # Slight increase for more creative/detailed output
+            max_tokens=8192  # Doubled from 4096 for longer documents
         )
         return generated_document
     except Exception as e:

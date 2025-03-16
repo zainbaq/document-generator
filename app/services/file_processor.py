@@ -2,6 +2,34 @@ import os
 from werkzeug.utils import secure_filename
 from flask import current_app
 
+def read_large_pdf(file_path):
+    """
+    Process a large PDF file in a memory-efficient way by streaming.
+    
+    Args:
+        file_path: Path to the PDF file
+        
+    Returns:
+        str: The extracted text content
+    """
+    import PyPDF2
+    from io import BytesIO
+    
+    text_chunks = []
+    
+    # Create a buffer size (e.g., 1MB)
+    buffer_size = 1024 * 1024
+    
+    with open(file_path, 'rb') as f:
+        reader = PyPDF2.PdfReader(f)
+        for page_num in range(len(reader.pages)):
+            page = reader.pages[page_num]
+            text = page.extract_text()
+            if text:
+                text_chunks.append(text)
+                
+    return "\n".join(text_chunks)
+
 def read_uploaded_file(uploaded_file):
     """
     Read the uploaded file and extract text depending on its file type.

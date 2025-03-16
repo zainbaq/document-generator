@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document Generation in Progress</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+        // Start checking status when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            checkStatus("{{ url_for('main.task_status', task_id=task_id) }}");
+        });
+        
+        // Function to check document generation status
+        function checkStatus(statusUrl) {
+            fetch(statusUrl)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('status-message').textContent = data.message;
+                    document.getElementById('progress-bar-fill').style.width = data.progress + '%';
+                    
+                    if (data.status === 'done') {
+                        window.location.href = data.redirect_url;
+                    } else if (data.status === 'error') {
+                        document.getElementById('error-container').style.display = 'block';
+                        document.getElementById('error-message').textContent = data.message;
+                    } else {
+                        setTimeout(() => checkStatus(statusUrl), 2000);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking status:', error);
+                    document.getElementById('error-container').style.display = 'block';
+                    document.getElementById('error-message').textContent = 'Connection error. Please try again.';
+                });
+        }
+    </script>
+    <style>
+        .status-container {
+            text-align: center;
+            margin: 50px auto;
+            max-width: 600px;
+        }
+        
+        .progress-container {
+            margin: 30px 0;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            background-color: #f3f3f3;
+            border-radius: 5px;
+            display: block;
+            height: 20px;
+            overflow: hidden;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            width: 0;
+            background-color: #4caf50;
+            border-radius: 5px;
+            transition: width 0.5s ease;
+        }
+        
+        #status-message {
+            margin: 20px 0;
+            font-size: 18px;
+        }
+        
+        #error-container {
+            display: none;
+            color: #e74c3c;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #e74c3c;
+            border-radius: 5px;
+        }
+        
+        .back-button {
+            margin-top: 30px;
+        }
+        
+        .back-button a {
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        
+        .back-button a:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Document Generation in Progress</h1>
+        
+        <div class="status-container">
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div id="progress-bar-fill" class="progress-bar-fill"></div>
+                </div>
+            </div>
+            
+            <p id="status-message">Initializing document generation...</p>
+            
+            <div id="error-container">
+                <h3>An error occurred:</h3>
+                <p id="error-message"></p>
+                <div class="back-button">
+                    <a href="{{ url_for('main.index') }}">Return to Home</a>
+                </div>
+            </div>
+            
+            <div class="spinner"></div>
+        </div>
+    </div>
+</body>
+</html>

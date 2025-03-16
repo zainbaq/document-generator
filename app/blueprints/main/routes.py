@@ -5,6 +5,12 @@ from werkzeug.utils import secure_filename
 from . import main_bp
 from app.services.file_processor import read_uploaded_file, process_context_files
 from app.services.document_generator import generate_document, generate_docx, generate_pdf
+# At the top of the routes.py file, with other imports
+import threading
+import uuid
+
+# Define the dictionary to store background tasks
+background_tasks = {}
 
 @main_bp.route('/')
 def index():
@@ -68,3 +74,46 @@ def download():
     else:
         flash("Invalid file type requested.")
         return redirect(url_for('main.index'))
+    
+@main_bp.route('/result/<task_id>')
+def display_result(task_id):
+    """Display the result of a completed document generation task."""
+    if task_id not in background_tasks:
+        flash("Invalid task ID or task has expired.")
+        return redirect(url_for('main.index'))
+    
+    task = background_tasks[task_id]
+    if task['status'] != 'done':
+        return redirect(url_for('main.generation_status', task_id=task_id))
+    
+    # Store the final document in session for download
+    session['final_document'] = task['result']
+    
+    return render_template('result.html', document=task['result'])
+
+@main_bp.route('/download/<task_id>')
+def download_result(task_id):
+    """Download the generated document for a specific task."""
+    if task_id not in background_tasks:
+        flash("Invalid task ID or task has expired.")
+        return redirect(url_for('main.index'))
+    
+    task = background_tasks[task_id]
+    if task['status'] != 'done' or not task['result']:
+        flash("Document generation is not complete.")
+        return redirect(url_for('main.generation_status', task_id=task_id))
+    
+    filetype = request.args.get('filetype', 'docx').lower()
+    final_document = task['result']
+    
+    if filetype == 'docx':
+        file_data = generate_docx(final_document)
+        return send_file(file_data, as_attachment=True, download_name="generated_document.docx", 
+                         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+    elif filetype == 'pdf':
+        file_data = generate_pdf(final_document)
+        return send_file(file_data, as_attachment=True, download_name="generated_document.pdf", 
+                         mimetype="application/pdf")
+    else:
+        flash("Invalid file type requested.")
+        return redirect(url_for('main.display_result', task_id=task_id))

@@ -9,4 +9,4 @@ load_dotenv()
 app = create_app(os.getenv('FLASK_CONFIG', 'default'))
 
 if __name__ == '__main__':
-    app.run(debug=app.config['DEBUG'], host=app.config.get('HOST', '127.0.0.1'), port=app.config.get('PORT', 5000))
+    app.run(debug=app.config['DEBUG'], host=app.config.get('HOST', '127.0.0.1'), port=app.config.get('PORT', 5001))
